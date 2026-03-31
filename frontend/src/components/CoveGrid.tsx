@@ -1,8 +1,10 @@
 import { DragonCard } from './DragonCard'
 import { useCoveDragons } from '../hooks/useCoveDragons'
+import { useRemoveDragons } from '../hooks/useRemoveDragons'
 
 export function CoveGrid() {
   const { data, isLoading, isError, error } = useCoveDragons()
+  const removeMutation = useRemoveDragons()
 
   if (isLoading) {
     return <p className="grid-status">Loading cove dragons…</p>
@@ -20,10 +22,19 @@ export function CoveGrid() {
     return <p className="grid-status">No dragons are resting in the Cove yet.</p>
   }
 
+  const density = data.length >= 80 ? 'compact' : 'full'
+
   return (
     <div className="dragon-grid dragon-grid--cove">
       {data.map((dragon) => (
-        <DragonCard key={dragon.dragon_code} dragon={dragon} variant="cove" />
+        <DragonCard
+          key={dragon.dragon_code}
+          dragon={dragon}
+          variant="cove"
+          density={density}
+          canRemove={dragon.can_remove}
+          onRemove={() => removeMutation.mutate([dragon.dragon_code])}
+        />
       ))}
     </div>
   )

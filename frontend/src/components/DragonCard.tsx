@@ -7,10 +7,19 @@ type DragonCardProps = {
   variant?: 'cove' | 'geode'
   canRemove?: boolean
   onRemove?: () => void
+  density?: 'full' | 'compact'
 }
 
-export function DragonCard({ dragon, variant = 'cove', canRemove = false, onRemove }: DragonCardProps) {
-  const classes = ['dragon-card', `dragon-card--${variant}`].join(' ')
+export function DragonCard({
+  dragon,
+  variant = 'cove',
+  canRemove = false,
+  onRemove,
+  density = 'full',
+}: DragonCardProps) {
+  const classes = ['dragon-card', `dragon-card--${variant}`, density === 'compact' ? 'dragon-card--compact' : ''].join(
+    ' ',
+  )
 
   const hours =
     dragon.time_remaining >= 0 ? `${dragon.time_remaining}h left` : dragon.time_remaining === -2 ? 'Faded' : 'Stable'
@@ -39,22 +48,45 @@ export function DragonCard({ dragon, variant = 'cove', canRemove = false, onRemo
           referrerPolicy="no-referrer-when-downgrade"
         />
       </a>
-      <div className="dragon-card__body">
-        <div className="dragon-card__stat">
-          <span className="dragon-card__label">Views</span>
-          <span className="dragon-card__value">{dragon.views.toLocaleString()}</span>
+      {density === 'full' ? (
+        <div className="dragon-card__body">
+          <div className="dragon-card__stat">
+            <span className="dragon-card__label">Views</span>
+            <span className="dragon-card__value">{dragon.views.toLocaleString()}</span>
+          </div>
+          <div className="dragon-card__stat">
+            <span className="dragon-card__label">Unique</span>
+            <span className="dragon-card__value">{dragon.unique_clicks.toLocaleString()}</span>
+          </div>
+          <div className="dragon-card__stat">
+            <span className="dragon-card__label">Time</span>
+            <span className="dragon-card__value">{hours}</span>
+          </div>
         </div>
-        <div className="dragon-card__stat">
-          <span className="dragon-card__label">Unique</span>
-          <span className="dragon-card__value">{dragon.unique_clicks.toLocaleString()}</span>
+      ) : (
+        <div className="dragon-card__tooltip" role="note">
+          <div className="dragon-card__tooltip-row">
+            <span className="dragon-card__label">Views</span>
+            <span className="dragon-card__value">{dragon.views.toLocaleString()}</span>
+          </div>
+          <div className="dragon-card__tooltip-row">
+            <span className="dragon-card__label">Unique</span>
+            <span className="dragon-card__value">{dragon.unique_clicks.toLocaleString()}</span>
+          </div>
+          <div className="dragon-card__tooltip-row">
+            <span className="dragon-card__label">Time</span>
+            <span className="dragon-card__value">{hours}</span>
+          </div>
         </div>
-        <div className="dragon-card__stat">
-          <span className="dragon-card__label">Time</span>
-          <span className="dragon-card__value">{hours}</span>
-        </div>
-      </div>
+      )}
       {canRemove && onRemove && (
-        <button type="button" className="dragon-card__remove" onClick={onRemove}>
+        <button
+          type="button"
+          className="dragon-card__remove"
+          onClick={onRemove}
+          aria-label={`Remove ${dragon.dragon_code} from the cove`}
+          title="Remove"
+        >
           Remove
         </button>
       )}

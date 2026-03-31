@@ -12,6 +12,35 @@
   transition: transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out;
 }
 
+.dragon-card--compact {
+  padding: 10px 12px 12px;
+  gap: 8px;
+}
+
+.dragon-card--compact .dragon-card__sprite {
+  width: 72px;
+  height: 86px;
+}
+
+.dragon-card__tooltip {
+  display: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+  padding-top: 8px;
+  gap: 6px;
+}
+
+.dragon-card__tooltip-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.dragon-card--compact:hover .dragon-card__tooltip,
+.dragon-card--compact:focus-within .dragon-card__tooltip {
+  display: grid;
+}
+
 .dragon-card--geode {
   background: radial-gradient(circle at top, rgba(255, 79, 179, 0.3), #3b0421);
   border-color: rgba(255, 79, 179, 0.65);
