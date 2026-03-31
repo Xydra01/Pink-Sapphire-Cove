@@ -3,3 +3,4 @@ uvicorn[standard]
 beanie
 motor
 httpx
+python-dotenv
