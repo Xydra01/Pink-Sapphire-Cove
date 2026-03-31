@@ -4,3 +4,5 @@ beanie
 motor
 httpx
 python-dotenv
+pytest
+pytest-asyncio
