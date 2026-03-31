@@ -84,13 +84,18 @@ class AddDragonsResponse(BaseModel):
                     }
                 ],
                 "errors": [
-                    {"dragon_code": "!!!!!", "error": "Invalid dragon code format."},
+                    {
+                        "dragon_code": "XxXxx",
+                        "error": "Dragon Cave API: Dragon Cave v2 network error: ReadTimeout",
+                    },
                 ],
             }
         }
     )
 
-    session_token: str
+    session_token: str = Field(
+        description="Opaque batch id for DELETE /api/dragons/remove. Not your Dragon Cave private API key.",
+    )
     dragons: list[DragonOut]
     errors: list[AddDragonsError]
 
@@ -261,7 +266,7 @@ async def add_dragons(req: AddDragonsRequest) -> AddDragonsResponse:
 
     for code, result in results:
         if isinstance(result, Exception):
-            msg = str(result)
+            msg = str(result).strip() or type(result).__name__
             if isinstance(result, DragonCaveAPIError):
                 msg = f"Dragon Cave API: {msg}"
             errors.append(AddDragonsError(dragon_code=code, error=msg))
