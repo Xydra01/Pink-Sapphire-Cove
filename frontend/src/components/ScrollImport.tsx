@@ -16,8 +16,7 @@ export function ScrollImport() {
   const previewMutation = useMutation({
     mutationFn: previewScroll,
     onSuccess: (data) => {
-      const addable = data.dragons.filter((d) => d.can_add).map((d) => d.dragon_code)
-      setSelected(new Set(addable))
+      setSelected(new Set(data.dragons.map((d) => d.dragon_code)))
       setModalOpen(true)
     },
   })
@@ -40,8 +39,7 @@ export function ScrollImport() {
 
   const data = previewMutation.data
 
-  const toggleCode = (code: string, canAdd: boolean) => {
-    if (!canAdd) return
+  const toggleCode = (code: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(code)) next.delete(code)
@@ -50,9 +48,9 @@ export function ScrollImport() {
     })
   }
 
-  const selectAllAddable = () => {
+  const selectAll = () => {
     if (!data) return
-    setSelected(new Set(data.dragons.filter((d) => d.can_add).map((d) => d.dragon_code)))
+    setSelected(new Set(data.dragons.map((d) => d.dragon_code)))
   }
 
   const clearSelection = () => setSelected(new Set())
@@ -71,7 +69,7 @@ export function ScrollImport() {
 
   const addAllAddable = () => {
     if (!data) return
-    const codes = data.dragons.filter((d) => d.can_add).map((d) => d.dragon_code)
+    const codes = data.dragons.map((d) => d.dragon_code)
     const { codes: capped } = capDragonCodesForRequest(codes)
     addMutation.mutate(capped, {
       onSuccess: () => {
@@ -88,8 +86,8 @@ export function ScrollImport() {
       </h2>
       <p className="scroll-import__hint">
         Paste your public scroll link (<code>dragcave.net/user/…</code>) or your Dragon Cave username. We load eggs and
-        hatchlings only (via Dragon Cave&apos;s <code>user_young</code> API). You can add every dragon that has{' '}
-        <strong>Accept aid</strong> turned on, or pick specific ones in the chooser.
+        hatchlings only (via Dragon Cave&apos;s <code>user_young</code> API). <strong>Accept aid</strong> is shown as a hint,
+        but it won&apos;t block adding.
       </p>
       <div className="scroll-import__row">
         <div className="scroll-import__field">
@@ -153,23 +151,17 @@ export function ScrollImport() {
             </div>
             <div className="scroll-import__list">
               {data.dragons.map((d: ScrollDragonPreview) => (
-                <label
-                  key={d.dragon_code}
-                  className={`scroll-import__item${d.can_add ? '' : ' scroll-import__item--blocked'}`}
-                >
+                <label key={d.dragon_code} className="scroll-import__item">
                   <input
                     type="checkbox"
                     checked={selected.has(d.dragon_code)}
-                    disabled={!d.can_add}
-                    onChange={() => toggleCode(d.dragon_code, d.can_add)}
+                    onChange={() => toggleCode(d.dragon_code)}
                   />
                   <img src={dragonImageUrl(d.dragon_code)} alt="" width={56} height={67} loading="lazy" />
                   <div className="scroll-import__item-main">
                     <span className="scroll-import__item-code">{d.dragon_code}</span>
                     {d.name ? <span className="scroll-import__item-name">{d.name}</span> : null}
-                    {!d.can_add ? (
-                      <span className="scroll-import__item-note">Accept aid is off — cannot add from hatchery</span>
-                    ) : null}
+                    {!d.accept_aid ? <span className="scroll-import__item-note">Accept aid is off</span> : null}
                   </div>
                 </label>
               ))}
@@ -178,14 +170,14 @@ export function ScrollImport() {
               <p className="scroll-import__dialog-sub">No eggs or hatchlings on this scroll right now.</p>
             ) : null}
             <div className="scroll-import__actions">
-              <button type="button" className="scroll-import__btn" onClick={selectAllAddable}>
-                Select all (aid on)
+              <button type="button" className="scroll-import__btn" onClick={selectAll}>
+                Select all
               </button>
               <button type="button" className="scroll-import__btn" onClick={clearSelection}>
                 Clear
               </button>
               <button type="button" className="scroll-import__btn" onClick={addAllAddable} disabled={addMutation.isPending}>
-                Add all with aid on
+                Add all
               </button>
               <button
                 type="button"

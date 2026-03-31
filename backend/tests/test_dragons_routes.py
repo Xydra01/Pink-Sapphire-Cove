@@ -162,8 +162,8 @@ async def test_scroll_preview_ok(monkeypatch: pytest.MonkeyPatch, api_client) ->
     async def fake_scroll(username: str) -> list[dict[str, object]]:
         assert username == "TestUser"
         return [
-            {"dragon_code": "xx1a2", "name": "Egg", "can_add": True},
-            {"dragon_code": "yy3b4", "name": "", "can_add": False},
+            {"dragon_code": "xx1a2", "name": "Egg", "accept_aid": True},
+            {"dragon_code": "yy3b4", "name": "", "accept_aid": False},
         ]
 
     monkeypatch.setattr(dragons_api, "fetch_user_young_scroll", fake_scroll)
@@ -177,8 +177,8 @@ async def test_scroll_preview_ok(monkeypatch: pytest.MonkeyPatch, api_client) ->
     assert body["username"] == "TestUser"
     assert len(body["dragons"]) == 2
     assert body["dragons"][0]["dragon_code"] == "xx1a2"
-    assert body["dragons"][0]["can_add"] is True
-    assert body["dragons"][1]["can_add"] is False
+    assert body["dragons"][0]["accept_aid"] is True
+    assert body["dragons"][1]["accept_aid"] is False
 
 
 @pytest.mark.asyncio

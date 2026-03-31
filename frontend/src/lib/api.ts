@@ -66,7 +66,7 @@ export async function addDragons(codes: string[]): Promise<AddDragonsResult> {
 export type ScrollDragonPreview = {
   dragon_code: string
   name: string
-  can_add: boolean
+  accept_aid: boolean
 }
 
 export type ScrollPreviewResponse = {

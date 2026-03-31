@@ -122,7 +122,9 @@ class ScrollPreviewRequest(BaseModel):
 class ScrollDragonPreview(BaseModel):
     dragon_code: str
     name: str = ""
-    can_add: bool
+    # Whether the scroll owner has enabled "Accept aid from others".
+    # We do NOT block adding codes when this is false; it's informational only.
+    accept_aid: bool
 
 
 class ScrollPreviewResponse(BaseModel):
@@ -134,7 +136,7 @@ class ScrollPreviewResponse(BaseModel):
                     {
                         "dragon_code": "abcDE",
                         "name": "Example",
-                        "can_add": True,
+                        "accept_aid": True,
                     }
                 ],
             }
@@ -213,8 +215,8 @@ async def _ensure_session(token: str) -> UserSession:
 async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
     """
     List eggs and unfrozen hatchlings on a user's public scroll (``user_young`` legacy API).
-    Use this to let visitors pick which dragons to add; only dragons with Accept Aid on
-    should be added (``can_add``).
+    Use this to let visitors pick which dragons to add. We surface Accept Aid as a hint
+    only; we do not block adding codes when Accept Aid is off.
     """
     try:
         username = parse_scroll_username(req.scroll_input)
@@ -229,7 +231,11 @@ async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
         raise HTTPException(status_code=502, detail=f"Scroll preview failed: {e!s}") from e
 
     dragons = [
-        ScrollDragonPreview(dragon_code=r["dragon_code"], name=r["name"], can_add=r["can_add"])
+        ScrollDragonPreview(
+            dragon_code=r["dragon_code"],
+            name=r["name"],
+            accept_aid=bool(r.get("accept_aid")),
+        )
         for r in rows
     ]
     return ScrollPreviewResponse(username=username, dragons=dragons)

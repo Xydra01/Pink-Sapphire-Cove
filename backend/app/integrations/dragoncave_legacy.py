@@ -149,8 +149,10 @@ def _truthy_accept_aid(raw: Any) -> bool:
 
 async def fetch_user_young_scroll(username: str) -> list[dict[str, Any]]:
     """
-    Call ``user_young`` for a username. Returns dicts with dragon_code, name, can_add
-    (Accept Aid enabled — required for third-party hatchery interaction per DC API docs).
+    Call ``user_young`` for a username.
+
+    We return ``accept_aid`` as informational only. Many hatcheries still accept eggs/hatchlings
+    with Accept Aid off (it's relevant to interaction expectations, not whether a code is valid).
     """
     settings = get_settings()
     if not settings.dc_api_key:
@@ -206,7 +208,7 @@ async def fetch_user_young_scroll(username: str) -> list[dict[str, Any]]:
             {
                 "dragon_code": dragon_code,
                 "name": name_str,
-                "can_add": _truthy_accept_aid(row.get("acceptaid")),
+                "accept_aid": _truthy_accept_aid(row.get("acceptaid")),
             }
         )
     return out
