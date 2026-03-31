@@ -17,6 +17,16 @@ class _FakeStats:
 
 
 @pytest.mark.asyncio
+async def test_dragons_index_lists_endpoints(api_client) -> None:
+    res = await api_client.get("/api/dragons")
+    assert res.status_code == 200
+    body = res.json()
+    assert "endpoints" in body
+    assert body["openapi"] == "/docs"
+    assert any("POST /api/dragons/add" in e for e in body["endpoints"])
+
+
+@pytest.mark.asyncio
 async def test_add_dragons_creates_session_and_inserts(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
     async def fake_fetch(code: str) -> _FakeStats:  # noqa: ARG001
         return _FakeStats(views=10, unique_clicks=2, time_remaining=12, is_sick=True)

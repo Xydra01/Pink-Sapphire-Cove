@@ -18,6 +18,25 @@ from backend.app.models import Dragon, UserSession
 
 router = APIRouter(prefix="/api/dragons", tags=["dragons"])
 
+
+@router.get(
+    "",
+    summary="Dragon API index",
+    description="GET this URL in the browser to confirm the API is running; sub-routes are listed below.",
+)
+async def dragons_api_index() -> dict[str, str | list[str]]:
+    return {
+        "endpoints": [
+            "POST /api/dragons/add — batch add (JSON body: {\"dragon_codes\": [\"AbCdE\"]})",
+            "POST /api/dragons/scroll-preview — JSON body: {\"input\": \"user or https://dragcave.net/user/…\"}",
+            "GET /api/dragons/cove",
+            "GET /api/dragons/geode",
+            "DELETE /api/dragons/remove — JSON body: {\"session_token\": \"…\", \"dragon_codes\": optional}",
+        ],
+        "openapi": "/docs",
+    }
+
+
 DRAGON_CODE_RE = re.compile(r"^[A-Za-z0-9]{1,5}$")
 FETCH_CONCURRENCY = 10
 
