@@ -65,8 +65,9 @@ async def clean_collections(request: pytest.FixtureRequest) -> AsyncIterator[Non
         yield
         return
 
-    await Dragon.get_motor_collection().delete_many({})
-    await UserSession.get_motor_collection().delete_many({})
+    # Beanie 2.x exposes the underlying collection via get_pymongo_collection().
+    await Dragon.get_pymongo_collection().delete_many({})
+    await UserSession.get_pymongo_collection().delete_many({})
     yield
 
 
