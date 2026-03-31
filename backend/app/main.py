@@ -53,5 +53,34 @@ async def healthz() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api")
+async def api_index() -> dict[str, str | list[str]]:
+    """Avoid a bare `/api` 404 when poking the server from the browser."""
+    return {
+        "message": "Pink Sapphire Cove API",
+        "docs": "/docs",
+        "dragon_routes_base": "/api/dragons",
+        "example": "GET /api/dragons/cove",
+    }
+
+
+@app.get("/api/dragons")
+async def dragons_api_index() -> dict[str, list[str]]:
+    """
+    Lists concrete dragon endpoints. A request to `/api/dragons` alone used to 404
+    because only sub-paths are registered on the router.
+    """
+    return {
+        "endpoints": [
+            "POST /api/dragons/add — batch add (JSON body: {\"dragon_codes\": [\"AbCdE\"]})",
+            "POST /api/dragons/scroll-preview — JSON body: {\"input\": \"user or https://dragcave.net/user/…\"}",
+            "GET /api/dragons/cove",
+            "GET /api/dragons/geode",
+            "DELETE /api/dragons/remove — JSON body: {\"session_token\": \"…\", \"dragon_codes\": optional}",
+        ],
+        "openapi": "/docs",
+    }
+
+
 app.include_router(dragons_router)
 
