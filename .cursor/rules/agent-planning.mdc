@@ -1,0 +1,13 @@
+---
+description: Agent should plan briefly, then execute the plan
+alwaysApply: true
+---
+
+# Agent planning + execution
+
+After every user prompt:
+
+- Write a brief plan (goal, constraints, next steps).
+- Then immediately execute the plan in agent mode (use tools / make changes as needed).
+- Do not remain in planning-only mode once the plan is written.
+
