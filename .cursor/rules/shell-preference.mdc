@@ -1,0 +1,30 @@
+---
+description: Shell usage preferences for this repo (favor Git Bash semantics)
+alwaysApply: true
+---
+
+## Shell and command conventions
+
+- **Preferred shell**: Assume the user primarily works in **Git Bash (MINGW64)** on Windows.
+  - When suggesting commands for the user to run manually, use **POSIX/Bash syntax** (e.g., `&&`, `||`, `source`, `$VAR`), not PowerShell-specific syntax.
+  - Use forward-slash paths in examples where possible (e.g., `/f/Users/...`), or quote Windows-style paths when necessary.
+
+- **When using the Cursor Shell tool** (which may be PowerShell-based):
+  - **Avoid** Bash-specific operators directly (`&&`, `||`) in tool commands unless explicitly invoking Bash.
+  - Prefer:
+    - Separate Shell tool calls for sequential steps, **or**
+    - PowerShell-compatible syntax if a single command is required.
+  - If a Bash-only construct is needed, call Git Bash explicitly, e.g.:
+    - `& 'F:\\Program Files\\Git\\usr\\bin\\bash.exe' -lc "cd '/f/Users/myfri/Elpis/The-Astral-Weyr' && <bash commands>"`
+
+- **Virtual environment usage**:
+  - Prefer the project venv Python when running tests or tools:
+    - From Git Bash examples, use: `source .venv/Scripts/activate` then `python -m pytest ...`.
+    - From the Cursor Shell tool, prefer: `.\.venv\Scripts\python.exe -m pytest ...` over the global `python`.
+
+- **Test commands (examples for the user)**:
+  - Run backend tests from Git Bash:
+    - `cd ~/Elpis/The-Astral-Weyr`
+    - `source .venv/Scripts/activate`
+    - `python -m pytest backend/tests/test_dragons_routes.py`
+

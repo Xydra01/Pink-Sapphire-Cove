@@ -86,6 +86,7 @@ async def test_geode_returns_urgent_sorted(api_client) -> None:
     await Dragon(
         dragon_code="later",
         session_token="s",
+        # Extremely high views should make this non-urgent under the Phase 2 formula.
         views=200_000,
         unique_clicks=50_000,
         time_remaining=40,
@@ -95,7 +96,38 @@ async def test_geode_returns_urgent_sorted(api_client) -> None:
     res = await api_client.get("/api/dragons/geode")
     assert res.status_code == 200
     out = res.json()
-    assert [d["dragon_code"] for d in out][0] == "soon"
+    codes = [d["dragon_code"] for d in out]
+    # Only the truly urgent dragon should be returned, and it should come first.
+    assert codes[0] == "soon"
+    assert "later" not in codes
+
+
+@pytest.mark.asyncio
+async def test_geode_sorts_by_time_remaining_then_urgency(api_client) -> None:
+    # Both of these should be urgent, but with different time_remaining values.
+    await Dragon(
+        dragon_code="sooner",
+        session_token="s",
+        views=0,
+        unique_clicks=0,
+        time_remaining=2,
+        is_sick=False,
+    ).insert()
+    await Dragon(
+        dragon_code="later_but_urgent",
+        session_token="s",
+        views=0,
+        unique_clicks=0,
+        time_remaining=5,
+        is_sick=False,
+    ).insert()
+
+    res = await api_client.get("/api/dragons/geode")
+    assert res.status_code == 200
+    out = res.json()
+    codes = [d["dragon_code"] for d in out]
+    # Lower time_remaining should be listed first for urgent dragons.
+    assert codes[:2] == ["sooner", "later_but_urgent"]
 
 
 @pytest.mark.asyncio
