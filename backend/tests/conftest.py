@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import os
+
+# Let pytest monkeypatch win over repo `.env` (see backend.app.core.config).
+os.environ.setdefault("PSC_DOTENV_OVERRIDE", "0")
+
 import sys
 from pathlib import Path
 from typing import AsyncIterator
