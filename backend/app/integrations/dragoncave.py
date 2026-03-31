@@ -96,8 +96,9 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
     our minimal persisted fields.
 
     Tries v2 ``GET /api/v2/dragon/{id}`` with ``Authorization: Bearer`` first.
-    If DC returns 401 ``Invalid API key`` (some manage-page keys only work on
-    legacy path auth), falls back to legacy ``/api/{key}/json/view/{id}``.
+    Falls back to legacy ``/api/{key}/json/view/{id}`` when v2 returns **401
+    Invalid API key** (some keys only work in the path) or a **3xx** we still
+    see after ``follow_redirects`` (cookie/edge quirks; body often empty).
     """
 
     url = f"{BASE_URL}dragon/{dragon_code}"
@@ -112,11 +113,13 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
 
     if resp.status_code != 200:
         body = resp.text[:500]
-        # Manage Applications "Private Key" is often accepted on legacy path URLs but
-        # rejected as v2 Bearer; fall back to /api/{key}/json/view/{id} (api.txt).
-        if resp.status_code == 401 and "Invalid API key" in body:
-            from backend.app.integrations.dragoncave_legacy import fetch_crystal_stats_legacy
+        from backend.app.integrations.dragoncave_legacy import fetch_crystal_stats_legacy
 
+        # Manage Applications "Private Key" is often accepted on legacy path URLs but
+        # rejected as v2 Bearer; DC may also leave us on 3xx with an empty body.
+        if resp.status_code == 401 and "Invalid API key" in body:
+            return await fetch_crystal_stats_legacy(dragon_code)
+        if resp.status_code in (301, 302, 303, 307, 308):
             return await fetch_crystal_stats_legacy(dragon_code)
 
         loc = (resp.headers.get("location") or "").strip()
