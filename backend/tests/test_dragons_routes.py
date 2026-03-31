@@ -1,0 +1,116 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+import pytest
+
+import backend.app.api.dragons as dragons_api
+from backend.app.models import Dragon
+
+
+@dataclass(frozen=True)
+class _FakeStats:
+    views: int
+    unique_clicks: int
+    time_remaining: int
+    is_sick: bool
+
+
+@pytest.mark.asyncio
+async def test_add_dragons_creates_session_and_inserts(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
+    async def fake_fetch(code: str) -> _FakeStats:  # noqa: ARG001
+        return _FakeStats(views=10, unique_clicks=2, time_remaining=12, is_sick=True)
+
+    monkeypatch.setattr(dragons_api, "fetch_crystal_stats", fake_fetch)
+
+    res = await api_client.post("/api/dragons/add", json={"dragon_codes": ["abCd3", "DeFgh"]})
+    assert res.status_code == 200
+    payload = res.json()
+    assert "session_token" in payload and payload["session_token"]
+    assert len(payload["dragons"]) == 2
+    assert payload["errors"] == []
+
+    stored = await Dragon.find().to_list()
+    assert {d.dragon_code for d in stored} == {"abCd3", "DeFgh"}
+
+
+@pytest.mark.asyncio
+async def test_add_dragons_rejects_all_invalid(api_client) -> None:
+    res = await api_client.post("/api/dragons/add", json={"dragon_codes": ["", "!!!!!!", "toolonggg"]})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_cove_filters_sick_and_dead(api_client) -> None:
+    await Dragon(
+        dragon_code="a",
+        session_token="s",
+        views=1,
+        unique_clicks=1,
+        time_remaining=10,
+        is_sick=False,
+    ).insert()
+    await Dragon(
+        dragon_code="b",
+        session_token="s",
+        views=1,
+        unique_clicks=1,
+        time_remaining=10,
+        is_sick=True,
+    ).insert()
+    await Dragon(
+        dragon_code="c",
+        session_token="s",
+        views=1,
+        unique_clicks=1,
+        time_remaining=-2,
+        is_sick=False,
+    ).insert()
+
+    res = await api_client.get("/api/dragons/cove")
+    assert res.status_code == 200
+    codes = {d["dragon_code"] for d in res.json()}
+    assert codes == {"a"}
+
+
+@pytest.mark.asyncio
+async def test_geode_returns_urgent_sorted(api_client) -> None:
+    await Dragon(
+        dragon_code="soon",
+        session_token="s",
+        views=1000,
+        unique_clicks=500,
+        time_remaining=1,
+        is_sick=True,
+    ).insert()
+    await Dragon(
+        dragon_code="later",
+        session_token="s",
+        views=0,
+        unique_clicks=0,
+        time_remaining=40,
+        is_sick=False,
+    ).insert()
+
+    res = await api_client.get("/api/dragons/geode")
+    assert res.status_code == 200
+    out = res.json()
+    assert [d["dragon_code"] for d in out][0] == "soon"
+
+
+@pytest.mark.asyncio
+async def test_remove_requires_valid_session_token(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
+    async def fake_fetch(code: str) -> _FakeStats:  # noqa: ARG001
+        return _FakeStats(views=1, unique_clicks=1, time_remaining=10, is_sick=False)
+
+    monkeypatch.setattr(dragons_api, "fetch_crystal_stats", fake_fetch)
+    add = await api_client.post("/api/dragons/add", json={"dragon_codes": ["abCd3"]})
+    token = add.json()["session_token"]
+
+    bad = await api_client.request("DELETE", "/api/dragons/remove", json={"session_token": "nope", "dragon_codes": ["abCd3"]})
+    assert bad.status_code == 403
+
+    ok = await api_client.request("DELETE", "/api/dragons/remove", json={"session_token": token, "dragon_codes": ["abCd3"]})
+    assert ok.status_code == 200
+    assert ok.json()["removed"] == ["abCd3"]
+
