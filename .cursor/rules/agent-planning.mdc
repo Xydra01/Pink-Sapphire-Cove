@@ -1,5 +1,5 @@
 ---
-description: Agent should plan briefly, then execute the plan
+description: Switch to Plan mode, then execute in Agent mode
 alwaysApply: true
 ---
 
@@ -7,7 +7,7 @@ alwaysApply: true
 
 After every user prompt:
 
-- Write a brief plan (goal, constraints, next steps).
-- Then immediately execute the plan in agent mode (use tools / make changes as needed).
-- Do not remain in planning-only mode once the plan is written.
+- Switch into **Plan mode** to write a brief plan (goal, constraints, next steps).
+- After the plan is written, switch back into **Agent mode** and execute the plan (use tools / make changes as needed).
+- Do not stay in Plan mode once execution should begin.
 
