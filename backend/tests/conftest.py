@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
 from typing import AsyncIterator
 
 import httpx
@@ -10,9 +12,13 @@ from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 
-from backend.app.core import get_settings
-from backend.app.main import app
-from backend.app.models import Dragon, UserSession
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from backend.app.core import get_settings  # noqa: E402
+from backend.app.main import app  # noqa: E402
+from backend.app.models import Dragon, UserSession  # noqa: E402
 
 
 @pytest.fixture(scope="session")
