@@ -99,14 +99,18 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
     timeout = httpx.Timeout(DEFAULT_TIMEOUT_S)
 
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
             resp = await client.get(url, headers=_auth_headers())
     except httpx.HTTPError as e:
         tail = str(e).strip() or type(e).__name__
         raise DragonCaveAPIError(f"Dragon Cave v2 network error: {tail}") from e
 
     if resp.status_code != 200:
-        raise DragonCaveAPIError(f"Dragon Cave API HTTP {resp.status_code}: {resp.text[:500]}")
+        loc = (resp.headers.get("location") or "").strip()
+        hint = f" (Location: {loc})" if loc and 300 <= resp.status_code < 400 else ""
+        raise DragonCaveAPIError(
+            f"Dragon Cave API HTTP {resp.status_code}{hint}: {resp.text[:500]}"
+        )
 
     payload = load_httpx_json_object(resp, f"Dragon Cave v2 GET /dragon/{dragon_code}")
     _parse_error_array(payload)
