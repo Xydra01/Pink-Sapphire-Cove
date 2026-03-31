@@ -39,7 +39,7 @@ def test_settings() -> None:
         os.environ["MONGODB_DB"] = "pink_sapphire_cove_test"
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def beanie_initialized(test_settings: None) -> AsyncIterator[None]:
     s = get_settings()
     client = AsyncIOMotorClient(s.mongodb_uri, serverSelectionTimeoutMS=5000)
