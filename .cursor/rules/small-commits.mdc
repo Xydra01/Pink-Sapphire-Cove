@@ -1,0 +1,13 @@
+---
+description: Prefer small, focused commits with clear messages
+alwaysApply: true
+---
+
+# Small commits
+
+Prefer multiple small commits over one large commit.
+
+- Each commit should represent **one coherent change** (e.g. “add db init”, “add dragons router”, “wire startup hook”).
+- Commit messages should make it easy to understand **what changed and why** when scanning `git log`.
+- Avoid mixing unrelated changes (formatting, refactors, features) in a single commit.
+

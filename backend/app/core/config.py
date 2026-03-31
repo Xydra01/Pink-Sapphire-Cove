@@ -7,6 +7,8 @@ from dataclasses import dataclass
 @dataclass(frozen=True)
 class Settings:
     dc_api_key: str | None
+    mongodb_uri: str | None
+    mongodb_db: str | None
 
 
 def _maybe_load_dotenv() -> None:
@@ -27,5 +29,10 @@ def _maybe_load_dotenv() -> None:
 
 def get_settings() -> Settings:
     _maybe_load_dotenv()
-    return Settings(dc_api_key=os.getenv("DC_API_KEY"))
+    return Settings(
+        dc_api_key=os.getenv("DC_API_KEY"),
+        mongodb_uri=os.getenv("MONGODB_URI"),
+        mongodb_db=os.getenv("MONGODB_DB"),
+    )
+
 
