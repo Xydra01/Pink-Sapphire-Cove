@@ -65,7 +65,7 @@ async def api_index() -> dict[str, str | list[str]]:
 
 
 @app.get("/api/dragons")
-async def dragons_api_index() -> dict[str, list[str]]:
+async def dragons_api_index() -> dict[str, str | list[str]]:
     """
     Lists concrete dragon endpoints. A request to `/api/dragons` alone used to 404
     because only sub-paths are registered on the router.

@@ -6,7 +6,7 @@ import secrets
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Header, HTTPException
 from fastapi_cache.decorator import cache
 from pydantic import BaseModel, ConfigDict, Field
 from pymongo.errors import DuplicateKeyError
@@ -62,6 +62,7 @@ class DragonOut(BaseModel):
     unique_clicks: int
     time_remaining: int
     is_sick: bool
+    can_remove: bool = False
 
 
 class AddDragonsError(BaseModel):
@@ -337,7 +338,7 @@ async def add_dragons(req: AddDragonsRequest) -> AddDragonsResponse:
 
 @router.get("/cove", response_model=list[DragonOut])
 @cache(expire=60)
-async def get_cove() -> list[DragonOut]:
+async def get_cove(x_session_token: str | None = Header(default=None)) -> list[DragonOut]:
     dragons = await Dragon.find(Dragon.is_sick == False, Dragon.time_remaining != -2).to_list()  # noqa: E712
     return [
         DragonOut(
@@ -346,6 +347,7 @@ async def get_cove() -> list[DragonOut]:
             unique_clicks=d.unique_clicks,
             time_remaining=d.time_remaining,
             is_sick=d.is_sick,
+            can_remove=bool(x_session_token) and d.session_token == x_session_token,
         )
         for d in dragons
     ]
@@ -353,7 +355,7 @@ async def get_cove() -> list[DragonOut]:
 
 @router.get("/geode", response_model=list[DragonOut])
 @cache(expire=60)
-async def get_geode() -> list[DragonOut]:
+async def get_geode(x_session_token: str | None = Header(default=None)) -> list[DragonOut]:
     # Phase 2: rely on persisted urgency metadata.
     # Only dragons explicitly marked urgent are returned, ordered by:
     # - lowest time_remaining first
@@ -370,6 +372,7 @@ async def get_geode() -> list[DragonOut]:
             unique_clicks=d.unique_clicks,
             time_remaining=d.time_remaining,
             is_sick=d.is_sick,
+            can_remove=bool(x_session_token) and d.session_token == x_session_token,
         )
         for d in dragons
     ]

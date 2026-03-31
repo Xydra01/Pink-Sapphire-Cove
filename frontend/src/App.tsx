@@ -1,12 +1,10 @@
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 import { useCoveDragons } from './hooks/useCoveDragons'
 import { ScrollImport } from './components/ScrollImport'
 import { BatchDropOff } from './components/BatchDropOff'
 import { GeodeGrid } from './components/GeodeGrid'
 import { CoveGrid } from './components/CoveGrid'
+import pinkSapphire from './assets/pink-sapphire.png'
 
 function App() {
   const { data, isLoading, error } = useCoveDragons()
@@ -15,24 +13,26 @@ function App() {
     <>
       <section id="center">
         <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+          <img src={pinkSapphire} className="base" width="180" height="180" alt="Pink sapphire emblem" />
         </div>
         <div>
           <h1>Pink Sapphire Cove</h1>
           <p style={{ marginTop: 12 }}>
-            API status:{' '}
             {error ? (
-              <strong style={{ color: 'var(--garnet-alert)' }}>{error.message}</strong>
+              <strong style={{ color: 'var(--garnet-alert)' }}>API offline</strong>
             ) : isLoading ? (
-              'Loading…'
+              'Checking the Cove…'
             ) : (
               <>
                 Cove has <strong>{data?.length ?? 0}</strong> dragons
               </>
             )}
           </p>
+          {error ? (
+            <p style={{ marginTop: 8, opacity: 0.8, fontSize: 13 }}>
+              Details: <code>{error.message}</code>
+            </p>
+          ) : null}
         </div>
       </section>
 

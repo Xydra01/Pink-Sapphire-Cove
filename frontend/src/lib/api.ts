@@ -4,6 +4,7 @@ export type Dragon = {
   unique_clicks: number
   time_remaining: number
   is_sick: boolean
+  can_remove: boolean
 }
 
 function messageFromFastApiBody(body: unknown, fallback: string): string {
@@ -34,13 +35,19 @@ async function errorMessageFromResponse(res: Response, fallback: string): Promis
 }
 
 export async function fetchCove(): Promise<Dragon[]> {
-  const res = await fetch('/api/dragons/cove')
+  const sessionToken = typeof window !== 'undefined' ? window.localStorage.getItem('gem-cove-session-token') : null
+  const res = await fetch('/api/dragons/cove', {
+    headers: sessionToken ? { 'X-Session-Token': sessionToken } : undefined,
+  })
   if (!res.ok) throw new Error(`Cove request failed: ${res.status}`)
   return (await res.json()) as Dragon[]
 }
 
 export async function fetchGeode(): Promise<Dragon[]> {
-  const res = await fetch('/api/dragons/geode')
+  const sessionToken = typeof window !== 'undefined' ? window.localStorage.getItem('gem-cove-session-token') : null
+  const res = await fetch('/api/dragons/geode', {
+    headers: sessionToken ? { 'X-Session-Token': sessionToken } : undefined,
+  })
   if (!res.ok) throw new Error(`Geode request failed: ${res.status}`)
   return (await res.json()) as Dragon[]
 }

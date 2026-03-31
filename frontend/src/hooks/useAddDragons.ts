@@ -14,6 +14,14 @@ export function storeSessionToken(token: string) {
   window.localStorage.setItem(SESSION_TOKEN_KEY, token)
 }
 
+export function requireStoredSessionToken(): string {
+  const token = getStoredSessionToken()
+  if (!token) {
+    throw new Error('No session token found. Add dragons first, then you can remove them.')
+  }
+  return token
+}
+
 export function useAddDragons() {
   const queryClient = useQueryClient()
 
