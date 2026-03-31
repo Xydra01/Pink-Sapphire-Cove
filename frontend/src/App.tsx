@@ -1,11 +1,30 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
+import { fetchCove } from './lib/api'
 
 function App() {
   const [count, setCount] = useState(0)
+  const [coveCount, setCoveCount] = useState<number | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetchCove()
+      .then((dragons) => {
+        if (cancelled) return
+        setCoveCount(dragons.length)
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return
+        setApiError(e instanceof Error ? e.message : String(e))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <>
@@ -16,9 +35,21 @@ function App() {
           <img src={viteLogo} className="vite" alt="Vite logo" />
         </div>
         <div>
-          <h1>Get started</h1>
+          <h1>Pink Sapphire Cove</h1>
           <p>
             Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+          </p>
+          <p style={{ marginTop: 12 }}>
+            API status:{' '}
+            {apiError ? (
+              <strong style={{ color: 'var(--garnet-alert)' }}>{apiError}</strong>
+            ) : coveCount === null ? (
+              'Loading…'
+            ) : (
+              <>
+                Cove has <strong>{coveCount}</strong> dragons
+              </>
+            )}
           </p>
         </div>
         <button
