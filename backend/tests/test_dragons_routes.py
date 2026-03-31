@@ -17,6 +17,16 @@ class _FakeStats:
 
 
 @pytest.mark.asyncio
+async def test_dragons_index_lists_endpoints(api_client) -> None:
+    res = await api_client.get("/api/dragons")
+    assert res.status_code == 200
+    body = res.json()
+    assert "endpoints" in body
+    assert body["openapi"] == "/docs"
+    assert any("POST /api/dragons/add" in e for e in body["endpoints"])
+
+
+@pytest.mark.asyncio
 async def test_add_dragons_creates_session_and_inserts(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
     async def fake_fetch(code: str) -> _FakeStats:  # noqa: ARG001
         return _FakeStats(views=10, unique_clicks=2, time_remaining=12, is_sick=True)
@@ -32,6 +42,23 @@ async def test_add_dragons_creates_session_and_inserts(monkeypatch: pytest.Monke
 
     stored = await Dragon.find().to_list()
     assert {d.dragon_code for d in stored} == {"abCd3", "DeFgh"}
+
+
+@pytest.mark.asyncio
+async def test_add_dragons_never_returns_blank_error_message(
+    monkeypatch: pytest.MonkeyPatch, api_client
+) -> None:
+    async def fetch_raises_empty_runtime_error(code: str) -> None:  # noqa: ARG001
+        raise RuntimeError("")
+
+    monkeypatch.setattr(dragons_api, "fetch_crystal_stats", fetch_raises_empty_runtime_error)
+
+    res = await api_client.post("/api/dragons/add", json={"dragon_codes": ["abCd3"]})
+    assert res.status_code == 200
+    payload = res.json()
+    assert len(payload["errors"]) == 1
+    assert payload["errors"][0]["error"].strip()
+    assert "RuntimeError" in payload["errors"][0]["error"]
 
 
 @pytest.mark.asyncio
@@ -128,6 +155,36 @@ async def test_geode_sorts_by_time_remaining_then_urgency(api_client) -> None:
     codes = [d["dragon_code"] for d in out]
     # Lower time_remaining should be listed first for urgent dragons.
     assert codes[:2] == ["sooner", "later_but_urgent"]
+
+
+@pytest.mark.asyncio
+async def test_scroll_preview_ok(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
+    async def fake_scroll(username: str) -> list[dict[str, object]]:
+        assert username == "TestUser"
+        return [
+            {"dragon_code": "xx1a2", "name": "Egg", "accept_aid": True},
+            {"dragon_code": "yy3b4", "name": "", "accept_aid": False},
+        ]
+
+    monkeypatch.setattr(dragons_api, "fetch_user_young_scroll", fake_scroll)
+
+    res = await api_client.post(
+        "/api/dragons/scroll-preview",
+        json={"input": "https://dragcave.net/user/TestUser"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["username"] == "TestUser"
+    assert len(body["dragons"]) == 2
+    assert body["dragons"][0]["dragon_code"] == "xx1a2"
+    assert body["dragons"][0]["accept_aid"] is True
+    assert body["dragons"][1]["accept_aid"] is False
+
+
+@pytest.mark.asyncio
+async def test_scroll_preview_invalid_input(api_client) -> None:
+    res = await api_client.post("/api/dragons/scroll-preview", json={"input": "../../"})
+    assert res.status_code == 400
 
 
 @pytest.mark.asyncio

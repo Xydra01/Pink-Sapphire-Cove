@@ -29,6 +29,35 @@
   border-color: var(--gem-core);
 }
 
+.dragon-card__figure {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  padding: 6px 0 2px;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: box-shadow 120ms ease-out;
+}
+
+.dragon-card__figure:focus-visible {
+  outline: 2px solid var(--gem-core);
+  outline-offset: 2px;
+}
+
+.dragon-card__figure:hover .dragon-card__sprite {
+  filter: brightness(1.05);
+}
+
+.dragon-card__sprite {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 .dragon-card__header {
   display: flex;
   align-items: center;
