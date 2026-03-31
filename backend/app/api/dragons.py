@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from fastapi_cache.decorator import cache
 from pydantic import BaseModel, Field
 
 from backend.app.integrations.dragoncave import DragonCaveAPIError, fetch_crystal_stats
@@ -146,6 +147,7 @@ async def add_dragons(req: AddDragonsRequest) -> AddDragonsResponse:
 
 
 @router.get("/cove", response_model=list[DragonOut])
+@cache(expire=60)
 async def get_cove() -> list[DragonOut]:
     dragons = await Dragon.find(Dragon.is_sick == False, Dragon.time_remaining != -2).to_list()  # noqa: E712
     return [
@@ -161,6 +163,7 @@ async def get_cove() -> list[DragonOut]:
 
 
 @router.get("/geode", response_model=list[DragonOut])
+@cache(expire=60)
 async def get_geode() -> list[DragonOut]:
     # Phase 2: rely on persisted urgency metadata.
     # Only dragons explicitly marked urgent are returned, ordered by:

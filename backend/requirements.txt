@@ -3,6 +3,9 @@ uvicorn[standard]
 beanie
 motor
 httpx
+apscheduler
+fastapi-cache2
 python-dotenv
+jinja2
 pytest
 pytest-asyncio
