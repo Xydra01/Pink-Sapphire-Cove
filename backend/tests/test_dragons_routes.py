@@ -45,6 +45,23 @@ async def test_add_dragons_creates_session_and_inserts(monkeypatch: pytest.Monke
 
 
 @pytest.mark.asyncio
+async def test_add_dragons_never_returns_blank_error_message(
+    monkeypatch: pytest.MonkeyPatch, api_client
+) -> None:
+    async def fetch_raises_empty_runtime_error(code: str) -> None:  # noqa: ARG001
+        raise RuntimeError("")
+
+    monkeypatch.setattr(dragons_api, "fetch_crystal_stats", fetch_raises_empty_runtime_error)
+
+    res = await api_client.post("/api/dragons/add", json={"dragon_codes": ["abCd3"]})
+    assert res.status_code == 200
+    payload = res.json()
+    assert len(payload["errors"]) == 1
+    assert payload["errors"][0]["error"].strip()
+    assert "RuntimeError" in payload["errors"][0]["error"]
+
+
+@pytest.mark.asyncio
 async def test_add_dragons_rejects_all_invalid(api_client) -> None:
     res = await api_client.post("/api/dragons/add", json={"dragon_codes": ["", "!!!!!!", "toolonggg"]})
     assert res.status_code == 400

@@ -145,6 +145,15 @@ class ScrollPreviewResponse(BaseModel):
     dragons: list[ScrollDragonPreview]
 
 
+def _exception_user_message(exc: Exception) -> str:
+    """Non-empty text for per-dragon errors (httpx and others may use ``str(e) == \"\"``)."""
+    text = str(exc).strip()
+    if text:
+        return text
+    qn = getattr(type(exc), "__qualname__", None) or type(exc).__name__
+    return f"{qn} (no message)"
+
+
 def _validate_dragon_codes(codes: list[str]) -> tuple[list[str], list[AddDragonsError]]:
     valid: list[str] = []
     errors: list[AddDragonsError] = []
@@ -266,7 +275,7 @@ async def add_dragons(req: AddDragonsRequest) -> AddDragonsResponse:
 
     for code, result in results:
         if isinstance(result, Exception):
-            msg = str(result).strip() or type(result).__name__
+            msg = _exception_user_message(result)
             if isinstance(result, DragonCaveAPIError):
                 msg = f"Dragon Cave API: {msg}"
             errors.append(AddDragonsError(dragon_code=code, error=msg))
