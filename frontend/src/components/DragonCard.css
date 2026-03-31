@@ -1,0 +1,110 @@
+.dragon-card {
+  position: relative;
+  padding: 14px 16px 18px;
+  background: radial-gradient(circle at top left, var(--gem-light), var(--gem-surface-2));
+  border: 1px solid var(--gem-border);
+  box-shadow: 0 10px 30px rgba(20, 0, 15, 0.12);
+  border-radius: 12px;
+  clip-path: polygon(10% 0, 90% 0, 100% 18%, 100% 82%, 90% 100%, 10% 100%, 0 82%, 0 18%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out, border-color 120ms ease-out;
+}
+
+.dragon-card--geode {
+  background: radial-gradient(circle at top, rgba(255, 79, 179, 0.3), #3b0421);
+  border-color: rgba(255, 79, 179, 0.65);
+  box-shadow:
+    0 0 25px rgba(255, 79, 179, 0.45),
+    0 14px 40px rgba(0, 0, 0, 0.7);
+}
+
+.dragon-card:hover,
+.dragon-card:focus-within {
+  transform: translateY(-2px);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 16px 40px rgba(0, 0, 0, 0.35);
+  border-color: var(--gem-core);
+}
+
+.dragon-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(42, 11, 26, 0.7);
+}
+
+.dragon-card--geode .dragon-card__header {
+  color: rgba(255, 234, 246, 0.9);
+}
+
+.dragon-card__code {
+  font-weight: 600;
+}
+
+.dragon-card__badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--garnet-alert);
+  color: #ffe9f5;
+  font-size: 0.7rem;
+}
+
+.dragon-card__body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.dragon-card__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dragon-card__label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(42, 11, 26, 0.6);
+}
+
+.dragon-card--geode .dragon-card__label {
+  color: rgba(255, 233, 248, 0.7);
+}
+
+.dragon-card__value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--gem-ink);
+}
+
+.dragon-card--geode .dragon-card__value {
+  color: #ffe9f7;
+}
+
+.dragon-card__remove {
+  margin-top: 10px;
+  align-self: flex-end;
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(176, 0, 90, 0.8);
+  background: transparent;
+  color: var(--garnet-alert);
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out, box-shadow 120ms ease-out;
+}
+
+.dragon-card__remove:hover,
+.dragon-card__remove:focus-visible {
+  background: var(--garnet-alert);
+  color: #ffe9f7;
+  box-shadow: 0 0 10px rgba(176, 0, 90, 0.6);
+}
+

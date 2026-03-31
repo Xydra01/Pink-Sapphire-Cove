@@ -182,3 +182,78 @@
     border-right-color: var(--border);
   }
 }
+
+.grid-section {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 0 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.grid-section__title {
+  font-size: 1.1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gem-ink);
+}
+
+.grid-section__title span {
+  opacity: 0.75;
+}
+
+.grid-section--geode {
+  margin-top: 12px;
+}
+
+.grid-section--geode .grid-section__title {
+  color: #ffe4f9;
+}
+
+.dragon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.dragon-grid--geode {
+  background: radial-gradient(circle at top, rgba(255, 79, 179, 0.18), rgba(14, 0, 8, 0.96));
+  border-radius: 20px;
+  padding: 18px 18px 20px;
+  box-shadow:
+    0 0 0 1px rgba(255, 79, 179, 0.35),
+    0 18px 50px rgba(0, 0, 0, 0.8);
+  animation: geode-pulse 2400ms ease-in-out infinite alternate;
+}
+
+.dragon-grid--cove {
+  background: radial-gradient(circle at top, rgba(255, 218, 241, 0.95), rgba(255, 244, 250, 0.98));
+  border-radius: 20px;
+  padding: 18px 18px 20px;
+  box-shadow: 0 16px 40px rgba(175, 119, 147, 0.36);
+}
+
+.grid-status {
+  font-size: 0.95rem;
+  color: rgba(42, 11, 26, 0.85);
+}
+
+.grid-status--error {
+  color: var(--garnet-alert);
+}
+
+@keyframes geode-pulse {
+  from {
+    box-shadow:
+      0 0 0 1px rgba(255, 79, 179, 0.32),
+      0 14px 40px rgba(0, 0, 0, 0.7);
+  }
+  to {
+    box-shadow:
+      0 0 0 1px rgba(255, 139, 206, 0.9),
+      0 22px 60px rgba(0, 0, 0, 0.92);
+  }
+}
+
