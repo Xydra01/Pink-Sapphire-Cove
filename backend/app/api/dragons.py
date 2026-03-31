@@ -8,7 +8,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi_cache.decorator import cache
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+from pymongo.errors import DuplicateKeyError
 
 from backend.app.integrations.dragoncave import DragonCaveAPIError, fetch_crystal_stats
 from backend.app.integrations.dragoncave_legacy import fetch_user_young_scroll, parse_scroll_username
@@ -56,7 +57,11 @@ class RemoveDragonsResponse(BaseModel):
 class ScrollPreviewRequest(BaseModel):
     """Scroll profile URL (dragcave.net/user/…) or plain username."""
 
-    input: str = Field(min_length=1, max_length=500)
+    model_config = ConfigDict(populate_by_name=True)
+
+    # JSON field name remains "input" for the frontend; avoid naming the Python attribute `input`
+    # (reserved/builtin-adjacent and can confuse some OpenAPI stacks).
+    scroll_input: str = Field(alias="input", min_length=1, max_length=500)
 
 
 class ScrollDragonPreview(BaseModel):
@@ -105,7 +110,7 @@ async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
     should be added (``can_add``).
     """
     try:
-        username = parse_scroll_username(req.input)
+        username = parse_scroll_username(req.scroll_input)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -113,6 +118,8 @@ async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
         rows = await fetch_user_young_scroll(username)
     except DragonCaveAPIError as e:
         raise HTTPException(status_code=502, detail=str(e)) from e
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Scroll preview failed: {e!s}") from e
 
     dragons = [
         ScrollDragonPreview(dragon_code=r["dragon_code"], name=r["name"], can_add=r["can_add"])
@@ -173,7 +180,20 @@ async def add_dragons(req: AddDragonsRequest) -> AddDragonsResponse:
                 is_sick=result.is_sick,
                 updated_at=datetime.utcnow(),
             )
-            await d.insert()
+            try:
+                await d.insert()
+            except DuplicateKeyError:
+                dup = await Dragon.find_one(Dragon.dragon_code == code)
+                if dup is None:
+                    raise
+                dup.session_token = session_token
+                dup.views = result.views
+                dup.unique_clicks = result.unique_clicks
+                dup.time_remaining = result.time_remaining
+                dup.is_sick = result.is_sick
+                dup.updated_at = datetime.utcnow()
+                await dup.save()
+                d = dup
 
         dragons_out.append(
             DragonOut(

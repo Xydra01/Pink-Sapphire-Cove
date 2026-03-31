@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import httpx
 import pytest
 
 import backend.app.integrations.dragoncave as dc
@@ -13,6 +14,7 @@ class _FakeResponse:
         self.status_code = status_code
         self._payload = payload
         self.text = json.dumps(payload) if not isinstance(payload, str) else payload
+        self.headers = httpx.Headers({"content-type": "application/json"})
 
     def json(self) -> Any:
         return self._payload
@@ -81,4 +83,20 @@ async def test_fetch_crystal_stats_ignores_notice_errors(monkeypatch: pytest.Mon
     _patch_client(monkeypatch, _FakeResponse(200, payload))
     stats = await dc.fetch_crystal_stats("abCd3")
     assert stats.is_sick is False
+
+
+def test_load_httpx_json_object_rejects_html() -> None:
+    r = httpx.Response(
+        200,
+        content=b"<html><body>nope</body></html>",
+        headers={"content-type": "text/html; charset=utf-8"},
+    )
+    with pytest.raises(dc.DragonCaveAPIError, match="expected JSON"):
+        dc.load_httpx_json_object(r, "test")
+
+
+def test_load_httpx_json_object_parses_when_content_type_missing_but_body_is_json() -> None:
+    r = httpx.Response(200, content=b'{"errors":[],"views":1,"unique":2,"hoursleft":3}', headers={})
+    out = dc.load_httpx_json_object(r, "test")
+    assert out["views"] == 1
 

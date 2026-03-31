@@ -16,7 +16,7 @@ import httpx
 
 from backend.app.core import get_settings
 
-from .dragoncave import DragonCaveAPIError
+from .dragoncave import DragonCaveAPIError, load_httpx_json_object
 
 DEFAULT_TIMEOUT_S = 20.0
 
@@ -84,28 +84,33 @@ async def fetch_user_young_scroll(username: str) -> list[dict[str, Any]]:
     if not settings.dc_api_key:
         raise DragonCaveAPIError("Missing DC_API_KEY environment variable.")
 
-    key = quote(settings.dc_api_key, safe="")
+    # Legacy docs: https://dragcave.net/api/{private_key}/json/{action}?...
+    # The key is inserted verbatim into the path (Dragon Cave expects the raw private key here).
+    key = settings.dc_api_key.strip()
     user_q = quote(username, safe="")
     url = f"https://dragcave.net/api/{key}/json/user_young?username={user_q}"
     timeout = httpx.Timeout(DEFAULT_TIMEOUT_S)
 
-    async with httpx.AsyncClient(timeout=timeout) as client:
-        resp = await client.get(url)
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(url)
+    except httpx.HTTPError as e:
+        raise DragonCaveAPIError(f"Dragon Cave legacy API network error: {e}") from e
 
     if resp.status_code != 200:
         raise DragonCaveAPIError(f"Dragon Cave legacy API HTTP {resp.status_code}: {resp.text[:500]}")
 
-    payload = resp.json()
-    if not isinstance(payload, dict):
-        raise DragonCaveAPIError("Invalid legacy API response: expected JSON object.")
+    payload = load_httpx_json_object(resp, "Dragon Cave legacy user_young")
 
     _parse_legacy_errors(payload)
 
     dragons = payload.get("dragons")
     if dragons is None:
         return []
-    if not isinstance(dragons, list):
-        raise DragonCaveAPIError("Invalid legacy API response: `dragons` is not a list.")
+    if isinstance(dragons, dict):
+        dragons = [v for v in dragons.values() if isinstance(v, dict)]
+    elif not isinstance(dragons, list):
+        raise DragonCaveAPIError("Invalid legacy API response: `dragons` is not a list or object.")
 
     out: list[dict[str, Any]] = []
     for row in dragons:

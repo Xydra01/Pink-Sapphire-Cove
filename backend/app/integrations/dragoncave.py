@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from typing import Any
 
@@ -24,6 +25,30 @@ class CrystalStats:
 
 class DragonCaveAPIError(RuntimeError):
     pass
+
+
+def load_httpx_json_object(resp: httpx.Response, context: str) -> dict[str, Any]:
+    """
+    Parse a Dragon Cave JSON body. Raises DragonCaveAPIError on HTML, empty bodies,
+    or invalid JSON (common when the key is wrong or the endpoint returns an error page).
+    """
+    text = (resp.text or "").strip()
+    ct = (resp.headers.get("content-type") or "").lower()
+    if not text:
+        raise DragonCaveAPIError(f"{context}: empty response body (HTTP {resp.status_code}).")
+    if "application/json" not in ct and not text.startswith("{"):
+        raise DragonCaveAPIError(
+            f"{context}: expected JSON, got content-type {ct!r}; body starts: {text[:280]!r}"
+        )
+    try:
+        val = json.loads(text)
+    except json.JSONDecodeError as e:
+        raise DragonCaveAPIError(
+            f"{context}: invalid JSON (HTTP {resp.status_code}); body starts: {text[:280]!r}"
+        ) from e
+    if not isinstance(val, dict):
+        raise DragonCaveAPIError(f"{context}: expected JSON object, got {type(val).__name__}")
+    return val
 
 
 def _auth_headers() -> dict[str, str]:
@@ -79,10 +104,7 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
     if resp.status_code != 200:
         raise DragonCaveAPIError(f"Dragon Cave API HTTP {resp.status_code}: {resp.text[:500]}")
 
-    payload = resp.json()
-    if not isinstance(payload, dict):
-        raise DragonCaveAPIError("Invalid API response: expected JSON object.")
-
+    payload = load_httpx_json_object(resp, f"Dragon Cave v2 GET /dragon/{dragon_code}")
     _parse_error_array(payload)
 
     views = _as_int(payload, "views")
