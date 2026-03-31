@@ -97,16 +97,24 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
 
     Tries v2 ``GET /api/v2/dragon/{id}`` with ``Authorization: Bearer`` first.
     Falls back to legacy ``/api/{key}/json/view/{id}`` when v2 returns **401
-    Invalid API key** (some keys only work in the path) or a **3xx** we still
-    see after ``follow_redirects`` (cookie/edge quirks; body often empty).
+    Invalid API key** (some keys only work in the path).
     """
 
     url = f"{BASE_URL}dragon/{dragon_code}"
     timeout = httpx.Timeout(DEFAULT_TIMEOUT_S)
 
     try:
-        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+        # Dragon Cave sometimes returns a 307 + sets a "redcurtain" cookie.
+        # Using a client cookie jar and a second attempt avoids getting stuck on
+        # an empty-body 3xx even with follow_redirects enabled.
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
             resp = await client.get(url, headers=_auth_headers())
+            if resp.status_code in (301, 302, 303, 307, 308):
+                # If they set a cookie and redirect to the same origin, retry once
+                # with the cookie jar populated.
+                location = (resp.headers.get("location") or "").strip()
+                if resp.cookies or location:
+                    resp = await client.get(location or url, headers=_auth_headers())
     except httpx.HTTPError as e:
         tail = str(e).strip() or type(e).__name__
         raise DragonCaveAPIError(f"Dragon Cave v2 network error: {tail}") from e
@@ -116,10 +124,8 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
         from backend.app.integrations.dragoncave_legacy import fetch_crystal_stats_legacy
 
         # Manage Applications "Private Key" is often accepted on legacy path URLs but
-        # rejected as v2 Bearer; DC may also leave us on 3xx with an empty body.
+        # rejected as v2 Bearer.
         if resp.status_code == 401 and "Invalid API key" in body:
-            return await fetch_crystal_stats_legacy(dragon_code)
-        if resp.status_code in (301, 302, 303, 307, 308):
             return await fetch_crystal_stats_legacy(dragon_code)
 
         loc = (resp.headers.get("location") or "").strip()
