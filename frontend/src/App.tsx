@@ -3,6 +3,7 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 import { useCoveDragons } from './hooks/useCoveDragons'
+import { ScrollImport } from './components/ScrollImport'
 import { BatchDropOff } from './components/BatchDropOff'
 import { GeodeGrid } from './components/GeodeGrid'
 import { CoveGrid } from './components/CoveGrid'
@@ -36,6 +37,8 @@ function App() {
       </section>
 
       <div className="ticks"></div>
+
+      <ScrollImport />
 
       <BatchDropOff />
 

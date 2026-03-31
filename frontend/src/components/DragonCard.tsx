@@ -1,4 +1,5 @@
 import type { Dragon } from '../lib/api'
+import { dragonImageUrl } from '../lib/dragonImage'
 import './DragonCard.css'
 
 type DragonCardProps = {
@@ -20,6 +21,24 @@ export function DragonCard({ dragon, variant = 'cove', canRemove = false, onRemo
         <span className="dragon-card__code">{dragon.dragon_code}</span>
         {dragon.is_sick && <span className="dragon-card__badge">Urgent</span>}
       </header>
+      <a
+        className="dragon-card__figure"
+        href={`https://dragcave.net/view/${encodeURIComponent(dragon.dragon_code)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={`Open ${dragon.dragon_code} on Dragon Cave (new tab)`}
+      >
+        <img
+          className="dragon-card__sprite"
+          src={dragonImageUrl(dragon.dragon_code)}
+          alt=""
+          width={100}
+          height={120}
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </a>
       <div className="dragon-card__body">
         <div className="dragon-card__stat">
           <span className="dragon-card__label">Views</span>
