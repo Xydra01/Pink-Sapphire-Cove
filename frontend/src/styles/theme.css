@@ -1,0 +1,31 @@
+:root {
+  /* Gem Cove palette (monochromatic pink crystal) */
+  --gem-light: #fff0f7;
+  --gem-core: #ff4fb3;
+  --garnet-alert: #b0005a;
+
+  /* Supporting surfaces/ink */
+  --gem-ink: #2a0b1a;
+  --gem-surface: #ffe0ef;
+  --gem-surface-2: #ffd1e7;
+  --gem-border: rgba(176, 0, 90, 0.18);
+  --gem-glow: rgba(255, 79, 179, 0.35);
+
+  --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  font-family: var(--font-sans);
+  color: var(--gem-ink);
+  background: radial-gradient(1200px 600px at 20% 10%, #ffffff 0%, var(--gem-light) 45%, #ffd7eb 100%);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100svh;
+}
+
