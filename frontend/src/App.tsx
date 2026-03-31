@@ -1,30 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
-import { fetchCove } from './lib/api'
+import { useCoveDragons } from './hooks/useCoveDragons'
 
 function App() {
   const [count, setCount] = useState(0)
-  const [coveCount, setCoveCount] = useState<number | null>(null)
-  const [apiError, setApiError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-    fetchCove()
-      .then((dragons) => {
-        if (cancelled) return
-        setCoveCount(dragons.length)
-      })
-      .catch((e: unknown) => {
-        if (cancelled) return
-        setApiError(e instanceof Error ? e.message : String(e))
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const { data, isLoading, error } = useCoveDragons()
 
   return (
     <>
@@ -41,13 +24,13 @@ function App() {
           </p>
           <p style={{ marginTop: 12 }}>
             API status:{' '}
-            {apiError ? (
-              <strong style={{ color: 'var(--garnet-alert)' }}>{apiError}</strong>
-            ) : coveCount === null ? (
+            {error ? (
+              <strong style={{ color: 'var(--garnet-alert)' }}>{error.message}</strong>
+            ) : isLoading ? (
               'Loading…'
             ) : (
               <>
-                Cove has <strong>{coveCount}</strong> dragons
+                Cove has <strong>{data?.length ?? 0}</strong> dragons
               </>
             )}
           </p>
