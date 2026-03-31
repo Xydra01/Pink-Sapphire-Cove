@@ -1,0 +1,122 @@
+.batch-drop-off {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 8px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.batch-drop-off__title {
+  font-size: 1.1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gem-ink);
+}
+
+.batch-drop-off__title span {
+  opacity: 0.75;
+}
+
+.batch-drop-off__hint {
+  font-size: 0.9rem;
+  color: rgba(42, 11, 26, 0.75);
+  max-width: 52rem;
+  line-height: 1.45;
+}
+
+.batch-drop-off__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.batch-drop-off__label {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(42, 11, 26, 0.65);
+}
+
+.batch-drop-off__textarea {
+  width: 100%;
+  min-height: 140px;
+  padding: 14px 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  color: var(--gem-ink);
+  background: linear-gradient(165deg, var(--gem-surface), var(--gem-surface-2));
+  border: 1px solid var(--gem-border);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  resize: vertical;
+}
+
+.batch-drop-off__textarea:focus-visible {
+  outline: 2px solid var(--gem-core);
+  outline-offset: 2px;
+  border-color: var(--gem-core);
+}
+
+.batch-drop-off__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.batch-drop-off__count {
+  font-size: 0.85rem;
+  color: rgba(42, 11, 26, 0.8);
+}
+
+.batch-drop-off__submit {
+  padding: 10px 22px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff5fb;
+  background: linear-gradient(135deg, var(--gem-core), var(--garnet-alert));
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(176, 0, 90, 0.35);
+  transition: transform 100ms ease-out, box-shadow 100ms ease-out;
+}
+
+.batch-drop-off__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 28px rgba(176, 0, 90, 0.45);
+}
+
+.batch-drop-off__submit:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.batch-drop-off__message {
+  font-size: 0.9rem;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--gem-border);
+}
+
+.batch-drop-off__message--error {
+  color: var(--garnet-alert);
+  background: rgba(176, 0, 90, 0.08);
+  border-color: rgba(176, 0, 90, 0.35);
+}
+
+.batch-drop-off__message--success {
+  color: rgba(42, 11, 26, 0.9);
+  background: rgba(255, 218, 241, 0.5);
+}
+
+.batch-drop-off__message--warn {
+  color: rgba(42, 11, 26, 0.85);
+  background: rgba(255, 200, 120, 0.2);
+  border-color: rgba(200, 120, 0, 0.35);
+}
