@@ -69,26 +69,6 @@ def _validate_dragon_codes(codes: list[str]) -> tuple[list[str], list[AddDragons
     return valid, errors
 
 
-def _priority_score(d: Dragon) -> float:
-    """
-    Higher score = higher urgency for the Geode.
-
-    This is intentionally simple for Phase 1; it can be refined later.
-    """
-
-    if d.time_remaining < 0:
-        return 0.0
-
-    # Eggs/hatchlings with low remaining time should dominate.
-    time_term = max(0, 48 - d.time_remaining) * 100.0
-
-    # Low progress gets a boost (avoid div by zero).
-    views_term = 50_000.0 / (d.views + 10)
-    unique_term = 25_000.0 / (d.unique_clicks + 5)
-
-    return time_term + views_term + unique_term
-
-
 async def _ensure_session(token: str) -> UserSession:
     session = await UserSession.find_one(UserSession.token == token)
     if not session:
@@ -182,19 +162,15 @@ async def get_cove() -> list[DragonOut]:
 
 @router.get("/geode", response_model=list[DragonOut])
 async def get_geode() -> list[DragonOut]:
-    # Include eggs/hatchlings with measurable time remaining and anything already flagged.
-    dragons = await Dragon.find(
-        Dragon.time_remaining >= 0,
-        Dragon.time_remaining <= 48,
-    ).to_list()
-
-    # Also include explicitly sick (covers threshold changes / older records).
-    sick_extra = await Dragon.find(Dragon.is_sick == True).to_list()  # noqa: E712
-    by_code = {d.dragon_code: d for d in dragons}
-    for d in sick_extra:
-        by_code.setdefault(d.dragon_code, d)
-
-    ordered = sorted(by_code.values(), key=_priority_score, reverse=True)
+    # Phase 2: rely on persisted urgency metadata.
+    # Only dragons explicitly marked urgent are returned, ordered by:
+    # - lowest time_remaining first
+    # - for ties, higher urgency_score first
+    dragons = (
+        await Dragon.find(Dragon.is_urgent == True)  # noqa: E712
+        .sort("+time_remaining", "-urgency_score")
+        .to_list()
+    )
     return [
         DragonOut(
             dragon_code=d.dragon_code,
@@ -203,7 +179,7 @@ async def get_geode() -> list[DragonOut]:
             time_remaining=d.time_remaining,
             is_sick=d.is_sick,
         )
-        for d in ordered
+        for d in dragons
     ]
 
 
