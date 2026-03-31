@@ -53,8 +53,12 @@ def load_httpx_json_object(resp: httpx.Response, context: str) -> dict[str, Any]
 
 def _auth_headers() -> dict[str, str]:
     settings = get_settings()
+    if settings.dc_authorization:
+        return {"Authorization": settings.dc_authorization}
     if not settings.dc_api_key:
-        raise DragonCaveAPIError("Missing DC_API_KEY environment variable.")
+        raise DragonCaveAPIError(
+            "Missing DC_API_KEY (or set DC_AUTHORIZATION for v2 Authorization header)."
+        )
     return {"Authorization": f"Bearer {settings.dc_api_key}"}
 
 
