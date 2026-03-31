@@ -1,0 +1,41 @@
+---
+description: Sync with origin/main before branching, pushing, or opening PRs
+alwaysApply: true
+---
+
+# Git workflow
+
+Always sync with `origin/main` before starting new work, pushing, or opening/updating a PR.
+
+## Required sequence
+
+```bash
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+```
+
+If `--ff-only` fails, reconcile locally (merge or rebase) before continuing.
+
+## When to run it
+
+- **Before creating a new branch**:
+
+```bash
+git fetch origin
+git checkout main
+git pull --ff-only origin main
+git checkout -b <new-branch>
+```
+
+- **Before pushing commits (feature branch)**:
+
+```bash
+git fetch origin
+git pull origin main
+```
+
+Use merge or rebase per team preference, but do not push a branch that hasn’t integrated the latest `main`.
+
+- **Before opening/updating a PR**: same as before pushing—integrate latest `main` on the PR branch and resolve conflicts locally.
+

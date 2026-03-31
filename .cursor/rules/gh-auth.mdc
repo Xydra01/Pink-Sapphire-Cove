@@ -1,0 +1,39 @@
+---
+description: Authenticate GitHub CLI using a fine-grained token (Windows/Git Bash friendly)
+alwaysApply: true
+---
+
+# GitHub CLI auth (fine-grained PAT)
+
+This project uses the GitHub CLI (`gh`) with a fine-grained personal access token (PAT).
+
+## Preferred: login with token via stdin
+
+From a shell where you can paste safely (commonly Git Bash):
+
+```bash
+gh auth login --hostname github.com --with-token
+```
+
+Then paste the token and press Enter.
+
+Verify:
+
+```bash
+gh auth status
+```
+
+## Alternative: `GH_TOKEN` environment variable
+
+If you prefer not to store credentials in `gh`’s keychain, set `GH_TOKEN` in your shell environment and use:
+
+```bash
+gh auth status
+```
+
+## Token requirements (fine-grained)
+
+- Token must have access to this repository.
+- Ensure it includes enough permissions for the actions you intend (creating PRs, reading checks, pushing via HTTPS if used).
+- If `gh` returns permission errors, increase the token’s repository permissions (prefer least privilege).
+
