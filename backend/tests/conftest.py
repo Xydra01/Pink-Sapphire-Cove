@@ -56,7 +56,7 @@ async def beanie_initialized(test_settings: None) -> AsyncIterator[None]:
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def clean_collections(request: pytest.FixtureRequest) -> AsyncIterator[None]:
+async def clean_collections(request: pytest.FixtureRequest, beanie_initialized: None) -> AsyncIterator[None]:
     """
     Only clean DB collections for tests that actually use Mongo/ASGI client.
     """
