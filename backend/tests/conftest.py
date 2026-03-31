@@ -8,6 +8,7 @@ import pytest
 import pytest_asyncio
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
+from pymongo.errors import PyMongoError
 
 from backend.app.core import get_settings
 from backend.app.main import app
@@ -35,16 +36,29 @@ def test_settings() -> None:
 @pytest_asyncio.fixture(scope="session")
 async def beanie_initialized(test_settings: None) -> AsyncIterator[None]:
     s = get_settings()
-    client = AsyncIOMotorClient(s.mongodb_uri)
+    client = AsyncIOMotorClient(s.mongodb_uri, serverSelectionTimeoutMS=5000)
     db = client.get_default_database() if not s.mongodb_db else client[s.mongodb_db]
 
-    await init_beanie(database=db, document_models=[Dragon, UserSession])
+    try:
+        # Force early connectivity/auth failure to skip cleanly.
+        await db.command({"ping": 1})
+        await init_beanie(database=db, document_models=[Dragon, UserSession])
+    except PyMongoError as e:
+        pytest.skip(f"MongoDB not reachable for tests: {type(e).__name__}: {e}")
     yield
     client.close()
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def clean_collections(beanie_initialized: None) -> AsyncIterator[None]:
+async def clean_collections(request: pytest.FixtureRequest) -> AsyncIterator[None]:
+    """
+    Only clean DB collections for tests that actually use Mongo/ASGI client.
+    """
+
+    if "api_client" not in request.fixturenames:
+        yield
+        return
+
     await Dragon.get_motor_collection().delete_many({})
     await UserSession.get_motor_collection().delete_many({})
     yield
