@@ -19,6 +19,7 @@ if str(REPO_ROOT) not in sys.path:
 from backend.app.core import get_settings  # noqa: E402
 from backend.app.main import app  # noqa: E402
 from backend.app.models import Dragon, UserSession  # noqa: E402
+from fastapi_cache import FastAPICache  # noqa: E402
 
 
 @pytest.fixture(scope="session")
@@ -68,6 +69,25 @@ async def clean_collections(request: pytest.FixtureRequest, beanie_initialized: 
     # Beanie 2.x exposes the underlying collection via get_pymongo_collection().
     await Dragon.get_pymongo_collection().delete_many({})
     await UserSession.get_pymongo_collection().delete_many({})
+    yield
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def clear_cache(request: pytest.FixtureRequest, beanie_initialized: None) -> AsyncIterator[None]:
+    """
+    Prevent cross-test pollution from the in-memory `fastapi-cache2` backend.
+    """
+
+    if "api_client" not in request.fixturenames:
+        yield
+        return
+
+    # `FastAPICache` initialization is done at import time; clear defensively.
+    try:
+        await FastAPICache.clear()
+    except AssertionError:
+        pass
+
     yield
 
 
