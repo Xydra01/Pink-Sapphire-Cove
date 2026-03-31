@@ -91,8 +91,9 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
     Fetch a single egg/hatchling/dragon record from Dragon Cave and map it to
     our minimal persisted fields.
 
-    Uses: GET /dragon/{id}
-    Docs: https://dragcave.net/api/docs
+    Tries v2 ``GET /api/v2/dragon/{id}`` with ``Authorization: Bearer`` first.
+    If DC returns 401 ``Invalid API key`` (some manage-page keys only work on
+    legacy path auth), falls back to legacy ``/api/{key}/json/view/{id}``.
     """
 
     url = f"{BASE_URL}dragon/{dragon_code}"
@@ -106,11 +107,18 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
         raise DragonCaveAPIError(f"Dragon Cave v2 network error: {tail}") from e
 
     if resp.status_code != 200:
+        body = resp.text[:500]
+        # Manage Applications "Private Key" is often accepted on legacy path URLs but
+        # rejected as v2 Bearer; fall back to /api/{key}/json/view/{id} (api.txt).
+        if resp.status_code == 401 and "Invalid API key" in body:
+            from backend.app.integrations.dragoncave_legacy import fetch_crystal_stats_legacy
+
+            return await fetch_crystal_stats_legacy(dragon_code)
+
         loc = (resp.headers.get("location") or "").strip()
         loc_hint = f" (Location: {loc})" if loc and 300 <= resp.status_code < 400 else ""
-        body = resp.text[:500]
         key_hint = ""
-        if resp.status_code == 401 and "Invalid API key" in body:
+        if resp.status_code == 401:
             key_hint = (
                 " — use the private key from https://dragcave.net/api/manage (not OAuth client id); "
                 "in .env put the key only (no extra 'Bearer ' prefix)."

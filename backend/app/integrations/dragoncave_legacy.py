@@ -16,7 +16,13 @@ import httpx
 
 from backend.app.core import get_settings
 
-from .dragoncave import DragonCaveAPIError, load_httpx_json_object
+from .dragoncave import (
+    CrystalStats,
+    DragonCaveAPIError,
+    SICK_THRESHOLD_HOURS,
+    _as_int,
+    load_httpx_json_object,
+)
 
 DEFAULT_TIMEOUT_S = 20.0
 
@@ -63,6 +69,72 @@ def _parse_legacy_errors(payload: dict[str, Any]) -> None:
 
     if hard:
         raise DragonCaveAPIError("Dragon Cave legacy API: " + "; ".join(hard))
+
+
+async def fetch_crystal_stats_legacy(dragon_code: str) -> CrystalStats:
+    """
+    Legacy ``/api/{key}/json/view/{id}`` (see api.txt). Same ``DC_API_KEY`` as
+    ``user_young``; used when v2 ``Bearer`` returns 401 Invalid API key for that key.
+    """
+    settings = get_settings()
+    if not settings.dc_api_key:
+        raise DragonCaveAPIError("Missing DC_API_KEY environment variable.")
+
+    key = settings.dc_api_key.strip()
+    code = (dragon_code or "").strip()
+    if not code:
+        raise DragonCaveAPIError("Dragon code is empty.")
+
+    url = f"https://dragcave.net/api/{key}/json/view/{code}"
+    timeout = httpx.Timeout(DEFAULT_TIMEOUT_S)
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
+            resp = await client.get(url)
+    except httpx.HTTPError as e:
+        tail = str(e).strip() or type(e).__name__
+        raise DragonCaveAPIError(f"Dragon Cave legacy view network error: {tail}") from e
+
+    if resp.status_code != 200:
+        loc = (resp.headers.get("location") or "").strip()
+        hint = f" (Location: {loc})" if loc and 300 <= resp.status_code < 400 else ""
+        raise DragonCaveAPIError(
+            f"Dragon Cave legacy view HTTP {resp.status_code}{hint}: {resp.text[:500]}"
+        )
+
+    payload = load_httpx_json_object(resp, f"Dragon Cave legacy view/{code}")
+    _parse_legacy_errors(payload)
+
+    raw = payload.get("dragons")
+    if raw is None:
+        raise DragonCaveAPIError("Legacy view: missing `dragons`.")
+    if isinstance(raw, dict):
+        rows = [v for v in raw.values() if isinstance(v, dict)]
+    elif isinstance(raw, list):
+        rows = [r for r in raw if isinstance(r, dict)]
+    else:
+        raise DragonCaveAPIError("Legacy view: `dragons` has unexpected type.")
+
+    if not rows:
+        raise DragonCaveAPIError("Dragon Cave legacy view: dragon not found or empty.")
+
+    row = rows[0]
+    rid = row.get("id")
+    if rid is None:
+        raise DragonCaveAPIError("Legacy view: missing dragon `id`.")
+    out_code = str(rid).strip()
+    views = _as_int(row, "views")
+    unique_clicks = _as_int(row, "unique")
+    time_remaining = _as_int(row, "hoursleft")
+    is_sick = time_remaining >= 0 and time_remaining <= SICK_THRESHOLD_HOURS
+
+    return CrystalStats(
+        dragon_code=out_code,
+        views=views,
+        unique_clicks=unique_clicks,
+        time_remaining=time_remaining,
+        is_sick=is_sick,
+    )
 
 
 def _truthy_accept_aid(raw: Any) -> bool:
