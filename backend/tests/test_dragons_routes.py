@@ -131,6 +131,36 @@ async def test_geode_sorts_by_time_remaining_then_urgency(api_client) -> None:
 
 
 @pytest.mark.asyncio
+async def test_scroll_preview_ok(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
+    async def fake_scroll(username: str) -> list[dict[str, object]]:
+        assert username == "TestUser"
+        return [
+            {"dragon_code": "xx1a2", "name": "Egg", "can_add": True},
+            {"dragon_code": "yy3b4", "name": "", "can_add": False},
+        ]
+
+    monkeypatch.setattr(dragons_api, "fetch_user_young_scroll", fake_scroll)
+
+    res = await api_client.post(
+        "/api/dragons/scroll-preview",
+        json={"input": "https://dragcave.net/user/TestUser"},
+    )
+    assert res.status_code == 200
+    body = res.json()
+    assert body["username"] == "TestUser"
+    assert len(body["dragons"]) == 2
+    assert body["dragons"][0]["dragon_code"] == "xx1a2"
+    assert body["dragons"][0]["can_add"] is True
+    assert body["dragons"][1]["can_add"] is False
+
+
+@pytest.mark.asyncio
+async def test_scroll_preview_invalid_input(api_client) -> None:
+    res = await api_client.post("/api/dragons/scroll-preview", json={"input": "../../"})
+    assert res.status_code == 400
+
+
+@pytest.mark.asyncio
 async def test_remove_requires_valid_session_token(monkeypatch: pytest.MonkeyPatch, api_client) -> None:
     async def fake_fetch(code: str) -> _FakeStats:  # noqa: ARG001
         return _FakeStats(views=1, unique_clicks=1, time_remaining=10, is_sick=False)

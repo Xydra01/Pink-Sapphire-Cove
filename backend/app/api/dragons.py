@@ -11,6 +11,7 @@ from fastapi_cache.decorator import cache
 from pydantic import BaseModel, Field
 
 from backend.app.integrations.dragoncave import DragonCaveAPIError, fetch_crystal_stats
+from backend.app.integrations.dragoncave_legacy import fetch_user_young_scroll, parse_scroll_username
 from backend.app.models import Dragon, UserSession
 
 
@@ -52,6 +53,23 @@ class RemoveDragonsResponse(BaseModel):
     removed: list[str]
 
 
+class ScrollPreviewRequest(BaseModel):
+    """Scroll profile URL (dragcave.net/user/…) or plain username."""
+
+    input: str = Field(min_length=1, max_length=500)
+
+
+class ScrollDragonPreview(BaseModel):
+    dragon_code: str
+    name: str = ""
+    can_add: bool
+
+
+class ScrollPreviewResponse(BaseModel):
+    username: str
+    dragons: list[ScrollDragonPreview]
+
+
 def _validate_dragon_codes(codes: list[str]) -> tuple[list[str], list[AddDragonsError]]:
     valid: list[str] = []
     errors: list[AddDragonsError] = []
@@ -77,6 +95,30 @@ async def _ensure_session(token: str) -> UserSession:
     if session.expires_at <= datetime.utcnow():
         raise HTTPException(status_code=403, detail="Session token expired.")
     return session
+
+
+@router.post("/scroll-preview", response_model=ScrollPreviewResponse)
+async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
+    """
+    List eggs and unfrozen hatchlings on a user's public scroll (``user_young`` legacy API).
+    Use this to let visitors pick which dragons to add; only dragons with Accept Aid on
+    should be added (``can_add``).
+    """
+    try:
+        username = parse_scroll_username(req.input)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    try:
+        rows = await fetch_user_young_scroll(username)
+    except DragonCaveAPIError as e:
+        raise HTTPException(status_code=502, detail=str(e)) from e
+
+    dragons = [
+        ScrollDragonPreview(dragon_code=r["dragon_code"], name=r["name"], can_add=r["can_add"])
+        for r in rows
+    ]
+    return ScrollPreviewResponse(username=username, dragons=dragons)
 
 
 @router.post("/add", response_model=AddDragonsResponse)
