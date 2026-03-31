@@ -95,7 +95,9 @@ async def fetch_user_young_scroll(username: str) -> list[dict[str, Any]]:
         async with httpx.AsyncClient(timeout=timeout) as client:
             resp = await client.get(url)
     except httpx.HTTPError as e:
-        raise DragonCaveAPIError(f"Dragon Cave legacy API network error: {e}") from e
+        # httpx timeouts often stringify to "" — include the exception class name.
+        tail = str(e).strip() or type(e).__name__
+        raise DragonCaveAPIError(f"Dragon Cave legacy API network error: {tail}") from e
 
     if resp.status_code != 200:
         raise DragonCaveAPIError(f"Dragon Cave legacy API HTTP {resp.status_code}: {resp.text[:500]}")

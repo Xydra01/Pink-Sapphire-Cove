@@ -18,6 +18,17 @@ from backend.app.models import Dragon, UserSession
 
 router = APIRouter(prefix="/api/dragons", tags=["dragons"])
 
+# OpenAPI: document HTTPException bodies without implying real tokens or usernames.
+_JSON_DETAIL_SCHEMA = {
+    "application/json": {
+        "schema": {
+            "type": "object",
+            "properties": {"detail": {"type": "string"}},
+            "required": ["detail"],
+        }
+    }
+}
+
 
 @router.get(
     "",
@@ -59,6 +70,26 @@ class AddDragonsError(BaseModel):
 
 
 class AddDragonsResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "session_token": "<issued_by_server_use_with_delete_remove>",
+                "dragons": [
+                    {
+                        "dragon_code": "Ab12c",
+                        "views": 10,
+                        "unique_clicks": 2,
+                        "time_remaining": 12,
+                        "is_sick": True,
+                    }
+                ],
+                "errors": [
+                    {"dragon_code": "!!!!!", "error": "Invalid dragon code format."},
+                ],
+            }
+        }
+    )
+
     session_token: str
     dragons: list[DragonOut]
     errors: list[AddDragonsError]
@@ -90,6 +121,21 @@ class ScrollDragonPreview(BaseModel):
 
 
 class ScrollPreviewResponse(BaseModel):
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "username": "ExampleUser",
+                "dragons": [
+                    {
+                        "dragon_code": "abcDE",
+                        "name": "Example",
+                        "can_add": True,
+                    }
+                ],
+            }
+        }
+    )
+
     username: str
     dragons: list[ScrollDragonPreview]
 
@@ -121,7 +167,35 @@ async def _ensure_session(token: str) -> UserSession:
     return session
 
 
-@router.post("/scroll-preview", response_model=ScrollPreviewResponse)
+@router.post(
+    "/scroll-preview",
+    response_model=ScrollPreviewResponse,
+    responses={
+        400: {
+            "description": "Invalid scroll input (empty, bad URL, or username failed validation).",
+            "content": {
+                "application/json": {
+                    **_JSON_DETAIL_SCHEMA["application/json"],
+                    "example": {
+                        "detail": "Could not read a valid Dragon Cave username. Paste your scroll link "
+                        "(dragcave.net/user/…) or type your username."
+                    },
+                },
+            },
+        },
+        502: {
+            "description": "Dragon Cave legacy API error, timeout, or non-JSON response.",
+            "content": {
+                "application/json": {
+                    **_JSON_DETAIL_SCHEMA["application/json"],
+                    "example": {
+                        "detail": "Dragon Cave legacy API network error: ReadTimeout",
+                    },
+                },
+            },
+        },
+    },
+)
 async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
     """
     List eggs and unfrozen hatchlings on a user's public scroll (``user_young`` legacy API).
@@ -147,7 +221,21 @@ async def scroll_preview(req: ScrollPreviewRequest) -> ScrollPreviewResponse:
     return ScrollPreviewResponse(username=username, dragons=dragons)
 
 
-@router.post("/add", response_model=AddDragonsResponse)
+@router.post(
+    "/add",
+    response_model=AddDragonsResponse,
+    responses={
+        400: {
+            "description": "Request body OK but no dragon codes passed validation.",
+            "content": {
+                "application/json": {
+                    **_JSON_DETAIL_SCHEMA["application/json"],
+                    "example": {"detail": "No valid dragon codes provided."},
+                },
+            },
+        },
+    },
+)
 async def add_dragons(req: AddDragonsRequest) -> AddDragonsResponse:
     valid_codes, errors = _validate_dragon_codes(req.dragon_codes)
     if not valid_codes:
