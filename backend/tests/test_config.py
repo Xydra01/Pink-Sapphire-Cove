@@ -15,3 +15,21 @@ def test_get_settings_reads_env(monkeypatch) -> None:
     assert s.mongodb_uri == "mongodb://example.invalid:27017"
     assert s.mongodb_db == "unit_test_db"
 
+
+def test_dc_api_key_strips_bearer_prefix(monkeypatch) -> None:
+    monkeypatch.setenv("DC_API_KEY", "Bearer mysecretkey")
+    monkeypatch.setenv("MONGODB_URI", "mongodb://example.invalid:27017")
+    monkeypatch.setenv("MONGODB_DB", "unit_test_db")
+
+    s = get_settings()
+    assert s.dc_api_key == "mysecretkey"
+
+
+def test_dc_api_key_strips_bearer_prefix_case_insensitive(monkeypatch) -> None:
+    monkeypatch.setenv("DC_API_KEY", "bEaReR abc")
+    monkeypatch.setenv("MONGODB_URI", "mongodb://example.invalid:27017")
+    monkeypatch.setenv("MONGODB_DB", "unit_test_db")
+
+    s = get_settings()
+    assert s.dc_api_key == "abc"
+

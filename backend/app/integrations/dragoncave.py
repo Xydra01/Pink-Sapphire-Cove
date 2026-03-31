@@ -107,9 +107,16 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
 
     if resp.status_code != 200:
         loc = (resp.headers.get("location") or "").strip()
-        hint = f" (Location: {loc})" if loc and 300 <= resp.status_code < 400 else ""
+        loc_hint = f" (Location: {loc})" if loc and 300 <= resp.status_code < 400 else ""
+        body = resp.text[:500]
+        key_hint = ""
+        if resp.status_code == 401 and "Invalid API key" in body:
+            key_hint = (
+                " — use the private key from https://dragcave.net/api/manage (not OAuth client id); "
+                "in .env put the key only (no extra 'Bearer ' prefix)."
+            )
         raise DragonCaveAPIError(
-            f"Dragon Cave API HTTP {resp.status_code}{hint}: {resp.text[:500]}"
+            f"Dragon Cave API HTTP {resp.status_code}{loc_hint}: {body}{key_hint}"
         )
 
     payload = load_httpx_json_object(resp, f"Dragon Cave v2 GET /dragon/{dragon_code}")

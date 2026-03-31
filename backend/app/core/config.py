@@ -64,10 +64,23 @@ def _env_trimmed(name: str) -> str | None:
     return t if t else None
 
 
+def _normalize_dc_api_key(key: str | None) -> str | None:
+    """Strip a leading ``Bearer `` prefix so we do not send ``Bearer Bearer …`` to DC v2."""
+    if key is None:
+        return None
+    t = key.strip()
+    if not t:
+        return None
+    low = t.lower()
+    if low.startswith("bearer "):
+        t = t[7:].strip()
+    return t if t else None
+
+
 def get_settings() -> Settings:
     _maybe_load_dotenv()
     return Settings(
-        dc_api_key=_env_trimmed("DC_API_KEY"),
+        dc_api_key=_normalize_dc_api_key(_env_trimmed("DC_API_KEY")),
         mongodb_uri=_env_trimmed("MONGODB_URI"),
         mongodb_db=_env_trimmed("MONGODB_DB"),
     )
