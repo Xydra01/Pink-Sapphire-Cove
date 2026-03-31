@@ -3,6 +3,7 @@ import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 import { useCoveDragons } from './hooks/useCoveDragons'
+import { BatchDropOff } from './components/BatchDropOff'
 import { GeodeGrid } from './components/GeodeGrid'
 import { CoveGrid } from './components/CoveGrid'
 
@@ -35,6 +36,8 @@ function App() {
       </section>
 
       <div className="ticks"></div>
+
+      <BatchDropOff />
 
       <section className="grid-section grid-section--geode">
         <h2 className="grid-section__title">

@@ -30,7 +30,30 @@ export async function addDragons(codes: string[]): Promise<AddDragonsResult> {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ dragon_codes: codes }),
   })
-  if (!res.ok) throw new Error(`Add dragons failed: ${res.status}`)
+  if (!res.ok) {
+    let message = `Add dragons failed: ${res.status}`
+    try {
+      const body: unknown = await res.json()
+      if (body && typeof body === 'object' && 'detail' in body) {
+        const detail = (body as { detail: unknown }).detail
+        if (typeof detail === 'string') message = detail
+        else if (Array.isArray(detail)) {
+          const parts = detail
+            .map((d) => {
+              if (d && typeof d === 'object' && 'msg' in d && typeof (d as { msg: unknown }).msg === 'string') {
+                return (d as { msg: string }).msg
+              }
+              return null
+            })
+            .filter(Boolean)
+          if (parts.length) message = parts.join('; ')
+        }
+      }
+    } catch {
+      /* ignore JSON parse errors */
+    }
+    throw new Error(message)
+  }
   return (await res.json()) as AddDragonsResult
 }
 
