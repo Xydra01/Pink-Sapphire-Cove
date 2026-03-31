@@ -95,10 +95,19 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
     Fetch a single egg/hatchling/dragon record from Dragon Cave and map it to
     our minimal persisted fields.
 
-    Tries v2 ``GET /api/v2/dragon/{id}`` with ``Authorization: Bearer`` first.
-    Falls back to legacy ``/api/{key}/json/view/{id}`` when v2 returns **401
-    Invalid API key** (some keys only work in the path).
+    Prefer legacy ``/api/{key}/json/view/{id}`` first (path auth is the most
+    consistently supported for application keys). If legacy fails, try v2
+    ``GET /api/v2/dragon/{id}`` with ``Authorization: Bearer``.
     """
+
+    # Legacy-first: avoids v2 "redcurtain" redirects and occasional bearer-key validation quirks.
+    # If legacy fails (network or response shape), fall back to v2.
+    from backend.app.integrations.dragoncave_legacy import fetch_crystal_stats_legacy
+
+    try:
+        return await fetch_crystal_stats_legacy(dragon_code)
+    except DragonCaveAPIError:
+        pass
 
     url = f"{BASE_URL}dragon/{dragon_code}"
     timeout = httpx.Timeout(DEFAULT_TIMEOUT_S)
@@ -121,12 +130,6 @@ async def fetch_crystal_stats(dragon_code: str) -> CrystalStats:
 
     if resp.status_code != 200:
         body = resp.text[:500]
-        from backend.app.integrations.dragoncave_legacy import fetch_crystal_stats_legacy
-
-        # Manage Applications "Private Key" is often accepted on legacy path URLs but
-        # rejected as v2 Bearer.
-        if resp.status_code == 401 and "Invalid API key" in body:
-            return await fetch_crystal_stats_legacy(dragon_code)
 
         loc = (resp.headers.get("location") or "").strip()
         loc_hint = f" (Location: {loc})" if loc and 300 <= resp.status_code < 400 else ""
