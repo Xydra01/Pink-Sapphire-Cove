@@ -78,16 +78,16 @@ async def test_geode_returns_urgent_sorted(api_client) -> None:
     await Dragon(
         dragon_code="soon",
         session_token="s",
-        views=1000,
-        unique_clicks=500,
+        views=0,
+        unique_clicks=0,
         time_remaining=1,
         is_sick=True,
     ).insert()
     await Dragon(
         dragon_code="later",
         session_token="s",
-        views=0,
-        unique_clicks=0,
+        views=200_000,
+        unique_clicks=50_000,
         time_remaining=40,
         is_sick=False,
     ).insert()
